@@ -1,7 +1,7 @@
 import sys
 import json
 import time
-from scanners import ip_addresses
+from scanners import dns_lookup, server_info
 
 
 class Scan:
@@ -30,9 +30,18 @@ class Scan:
 
         self.out[address]["scan_time"] = time.time()
 
-        dns = ip_addresses.IP_Lookup()
+        dns = dns_lookup.DNSLookup()
         self.out[address]["ipv4_addresses"] = dns.ipv4(address)
         self.out[address]["ipv6_addresses"] = dns.ipv6(address)
+
+        server = server_info.ServerInfo(address)
+
+        self.out[address]["http_server"] = server.server_type()
+        self.out[address]["insecure_http"] = server.insecure()
+        self.out[address]["redirect_to_https"] = server.redirect_to_https()
+        self.out[address]["hsts"] = server.hsts()
+        self.out[address]["tls_versions"] = server.tls_versions()
+        self.out[address]["root_ca"] = server.root_ca()
 
         return
 

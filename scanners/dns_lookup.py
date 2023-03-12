@@ -1,7 +1,7 @@
 import dns.resolver
 
 
-class IP_Lookup:
+class DNSLookup:
     def __init__(self):
         self.res = dns.resolver.Resolver(configure=False)
         self.nameservers = ["208.67.222.222", "1.1.1.1", "8.8.8.8", "8.26.56.26", "9.9.9.9", "64.6.65.6",
