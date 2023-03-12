@@ -65,7 +65,7 @@ class ServerInfo:
     def hsts(self):
         if self.r is None:
             return False
-        return False
+        return "Strict-Transport-Security" in self.r.headers
 
     def tls_versions(self):
         if self.r is None:
