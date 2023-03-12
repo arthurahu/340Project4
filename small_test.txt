@@ -1,4 +1,6 @@
-youtube.com
-en.wikipedia.org
+# youtube.com
+# en.wikipedia.org
 twitter.com
 insecure.stevetarzia.com
+stevetarzia.com
+tls13.cloudflare.com

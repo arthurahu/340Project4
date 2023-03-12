@@ -1,11 +1,14 @@
 import requests
 import socket
+import ssl
+import nmap
 
 
 class ServerInfo:
     def __init__(self, address):
         self.name = address
         self.url = "http://" + address
+        self.secure = False
         try:
             self.r = requests.get(self.url, timeout=2, allow_redirects=False)
         except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
@@ -40,7 +43,8 @@ class ServerInfo:
                 if self.url.startswith("https://"):
                     try:
                         self.r = requests.get(self.url, timeout=2)
-                        return True
+                        self.secure = True
+                        return self.secure
                     except (requests.exceptions.Timeout, requests.exceptions.ConnectionError):
                         self.r = None
                         return False
@@ -68,11 +72,72 @@ class ServerInfo:
         return "Strict-Transport-Security" in self.r.headers
 
     def tls_versions(self):
-        if self.r is None:
+        if self.r is None or self.secure is False:
             return []
-        return []
+
+        versions = []
+
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS)
+        context.options |= ssl.OP_NO_TLSv1 | ssl.OP_NO_TLSv1_1 | ssl.OP_NO_TLSv1_2 | ssl.OP_NO_TLSv1_3 | ssl.OP_NO_SSLv3
+        try:
+            with socket.create_connection((self.name, 443)) as sock:
+                with context.wrap_socket(sock, server_hostname=self.name) as ssock:
+                    versions.append("TLSv1.3")
+        except ssl.SSLError:
+            pass
+
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS)
+        context.options |= ssl.OP_NO_TLSv1 | ssl.OP_NO_TLSv1_1 | ssl.OP_NO_TLSv1_2 | ssl.OP_NO_TLSv1_3 | ssl.OP_NO_SSLv2
+        try:
+            with socket.create_connection((self.name, 443)) as sock:
+                with context.wrap_socket(sock, server_hostname=self.name) as ssock:
+                    versions.append("TLSv1.3")
+        except ssl.SSLError:
+            pass
+
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS)
+        context.options |= ssl.OP_NO_TLSv1 | ssl.OP_NO_TLSv1_1 | ssl.OP_NO_TLSv1_2
+        try:
+            with socket.create_connection((self.name, 443)) as sock:
+                with context.wrap_socket(sock, server_hostname=self.name) as ssock:
+                    versions.append("TLSv1.3")
+        except ssl.SSLError:
+            pass
+
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS)
+        context.options |= ssl.OP_NO_TLSv1 | ssl.OP_NO_TLSv1_1 | ssl.OP_NO_TLSv1_3
+        try:
+            with socket.create_connection((self.name, 443)) as sock:
+                with context.wrap_socket(sock, server_hostname=self.name) as ssock:
+                    versions.append("TLSv1.2")
+        except ssl.SSLError:
+            pass
+
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS)
+        context.options |= ssl.OP_NO_TLSv1 | ssl.OP_NO_TLSv1_2 | ssl.OP_NO_TLSv1_3
+        try:
+            with socket.create_connection((self.name, 443)) as sock:
+                with context.wrap_socket(sock, server_hostname=self.name) as ssock:
+                    versions.append("TLSv1.1")
+        except ssl.SSLError:
+            pass
+
+        context = ssl.SSLContext(ssl.PROTOCOL_TLS)
+        context.options |= ssl.OP_NO_TLSv1_1 | ssl.OP_NO_TLSv1_2 | ssl.OP_NO_TLSv1_3
+        try:
+            with socket.create_connection((self.name, 443)) as sock:
+                with context.wrap_socket(sock, server_hostname=self.name) as ssock:
+                    versions.append("TLSv1")
+        except ssl.SSLError:
+            pass
+
+        return versions
 
     def root_ca(self):
-        if self.r is None:
+        if self.r is None or self.secure is False:
             return ""
-        return ""
+        context = ssl.create_default_context()
+        with socket.create_connection((self.name, 443)) as sock:
+            with context.wrap_socket(sock, server_hostname=self.name) as sslsock:
+                cert = sslsock.getpeercert()
+        return cert['issuer'][1][0][1]

@@ -18,6 +18,8 @@ class Scan:
 
         with open(file_in, "r") as f:
             for address in f:
+                if address[0] == "#":
+                    continue
                 self.scan(address.strip())
 
         with open(file_out, "w") as f:
